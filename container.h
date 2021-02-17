@@ -9,16 +9,15 @@ class Container : public QWidget
 private:
     bool chosen;
     void drawWidget(QPainter &p);
-    void paintEvent(QPaintEvent *event);
 public:
     explicit Container(QWidget *parent = nullptr);
+    void paintEvent(QPaintEvent *event);
     QList<Container*> containerList;
     void choose();
     void unChoose();
     void addContainer(Container* c);
     void removeContainer(Container* c);
     bool hasContainer(Container* c);
-    QWidget* widget = NULL;
     QPoint  savePos;
     bool noChildAtClicked(QPoint &clicked);
     void setGeometry(int x, int y, int w, int h);

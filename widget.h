@@ -25,6 +25,7 @@ private:
     int     nDrag;
     Container* c1;
 public:
+    int mouseX; int mouseY;
     Widget(QWidget *parent = nullptr);
     ~Widget();
     void mouseMoveEvent(QMouseEvent *event);
@@ -32,7 +33,8 @@ public:
     void mouseReleaseEvent(QMouseEvent *event);
 //    void paintEvent(QPaintEvent *event);
     void mouseClickEvent(QMouseEvent *event);
-    void addContainer(int x, int y, int w, int h, QWidget *qw);
+    void addContainer(int x, int y, int w, int h, Container *c);
+    void contextMenuEvent( QContextMenuEvent * e );
 
 private:
     Ui::Widget *ui;

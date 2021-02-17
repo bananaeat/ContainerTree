@@ -7,11 +7,14 @@
 #include <QPainter>
 #include <QTabWidget>
 #include <QTextEdit>
+#include <QMenu>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
 {
+    mouseX = 0;
+    mouseY = 0;
     ui->setupUi(this);
     this->resize(500, 500);
     this->setMouseTracking(true);
@@ -21,14 +24,10 @@ Widget::Widget(QWidget *parent)
     bPressed = false;
     nDrag = 0;
 
-    QTabWidget *qtw = new QTabWidget(this);
-    QTextEdit *qtb = new QTextEdit(this);
     SimpleSpeedMeter *ssm = new SimpleSpeedMeter(this);
-    this->addContainer(100,100,200,300,qtw);
-    this->addContainer(300,300,100,100,qtb);
+    SimpleSpeedMeter *ssm2 = new SimpleSpeedMeter(this);
     this->addContainer(150,200,250,250,ssm);
-    qDebug() << qtw->frameGeometry().x() << " " << qtw->frameGeometry().y();
-
+    this->addContainer(350,200,250,250,ssm2);
 }
 
 Widget::~Widget()
@@ -36,16 +35,9 @@ Widget::~Widget()
     delete ui;
 }
 
-void Widget::addContainer(int x, int y, int w, int h, QWidget *qw){
-    Container* c = new Container(this);
-    qDebug() << "bp 1";
-    if(qw!=NULL){
-        qDebug() << "bp 1.5";
-        c->widget = qw;
-    }
-    qDebug() << "bp 2";
-    c->resize(w,h);
-    c->move(x,y);
+void Widget::addContainer(int x, int y, int w, int h, Container *c){
+    c->QWidget::resize(w,h);
+    c->QWidget::move(x,y);
     c->setMouseTracking(true);
     for(Container *oc : rootList){
         if(oc->frameGeometry().contains(c->frameGeometry().topLeft()) && oc->frameGeometry().contains(c->frameGeometry().bottomRight())){
@@ -58,10 +50,13 @@ void Widget::addContainer(int x, int y, int w, int h, QWidget *qw){
 
     c->savePos = QPoint(0, 0);
     rootList.append(c);
+    qDebug() << "Length:" << rootList.length();
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event)
 {
+    mouseX = event->pos().x();
+    mouseY = event->pos().y();
     event->accept();
     if(bPressed)
     {
@@ -71,10 +66,10 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             setCursor(Qt::ArrowCursor);
             newPos = event->pos();
             QPoint A = chosen->pos() + newPos - chosen->savePos;
-            chosen->move(A);
+            chosen->QWidget::move(A);
             for(Container *childc : chosen->containerList){
                 QPoint B = childc->pos() + newPos - childc->savePos;
-                childc->move(B);
+                childc->QWidget::move(B);
                 childc->savePos = newPos;
             }
             chosen->savePos = newPos;
@@ -105,7 +100,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nH = chosen->geometry().height();
             if(nW >10)
             {
-                chosen->setGeometry(nX,nY,nW,nH);
+                chosen->QWidget::setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -119,7 +114,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nH = chosen->geometry().height();
             if(nW >10)
             {
-                chosen->setGeometry(nX,nY,nW,nH);
+                chosen->QWidget::setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -134,7 +129,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nW = chosen->geometry().width();
             if(nH >10)
             {
-                chosen->setGeometry(nX,nY,nW,nH);
+                chosen->QWidget::setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -149,7 +144,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nW = chosen->geometry().width();
             if(nH > 10)
             {
-                chosen->setGeometry(nX,nY,nW,nH);
+                chosen->QWidget::setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -242,34 +237,40 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
 
 void Widget::mousePressEvent(QMouseEvent *event)
 {
-    QPoint aPt = event->pos();
-    for(Container* c:rootList){
-        QRect  aRect = c->frameGeometry();
-        aRect.adjust(-5,-5,5,5);
-        if(aRect.contains(aPt))
-        {
-            c->savePos = event->pos();
-            for(Container* childc : c->containerList){
-                childc->savePos = event->pos();
+    if(event->button() == Qt::LeftButton)
+    {
+        QPoint aPt = event->pos();
+        for(Container* c:rootList){
+            QRect  aRect = c->frameGeometry();
+            aRect.adjust(-5,-5,5,5);
+            if(aRect.contains(aPt))
+            {
+                c->savePos = event->pos();
+                for(Container* childc : c->containerList){
+                    childc->savePos = event->pos();
+                }
+                bPressed = true;
             }
-            bPressed = true;
-        }
-        if(c->noChildAtClicked(aPt) && aRect.contains(aPt)){
-            qDebug()<<"toggled";
-            qDebug()<<(chosen!=NULL);
-            if(chosen!=NULL){
-                qDebug()<<"unchoose";
-                chosen->unChoose();
+            if(c->noChildAtClicked(aPt) && aRect.contains(aPt)){
+                qDebug()<<"toggled";
+                qDebug()<<(chosen!=NULL);
+                if(chosen!=NULL){
+                    qDebug()<<"unchoose";
+                    chosen->unChoose();
+                }
+                qDebug() << "choose";
+                c->choose();
+                chosen = c;
+                c->raise();
+                qDebug() << "return";
+                return;
             }
-            qDebug() << "choose";
-            c->choose();
-            chosen = c;
-            qDebug() << "return";
-            return;
         }
+        chosen->unChoose();
+        chosen = fakeRoot;
+    } else if (event -> button() == Qt::RightButton){
+
     }
-    chosen->unChoose();
-    chosen = fakeRoot;
 }
 
 void Widget::mouseReleaseEvent(QMouseEvent *event)
@@ -277,6 +278,23 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     bPressed = false;
     nDrag = 0;
     setCursor(Qt::ArrowCursor);
+}
+
+void Widget::contextMenuEvent( QContextMenuEvent * e ){
+    QAction *pAddAction = new QAction("Add Simple Speed Meter",this);
+    connect(pAddAction, &QAction::triggered ,[=](){
+        SimpleSpeedMeter *s = new SimpleSpeedMeter(this);
+        this->addContainer(mouseX, mouseY, 250, 275, s);
+        s->show();
+    });
+
+    QMenu *pContextMenu = new QMenu(this);
+    pContextMenu->addAction(pAddAction);
+
+    pContextMenu->exec( e->globalPos() );
+
+    delete pContextMenu;
+    pContextMenu = NULL;
 }
 
 //void Widget::paintEvent(QPaintEvent *event)

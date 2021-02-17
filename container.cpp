@@ -6,7 +6,6 @@
 Container::Container(QWidget *parent) : QWidget(parent)
 {
     chosen = false;
-    widget = NULL;
 }
 
 void Container::drawWidget(QPainter &p){
@@ -19,6 +18,7 @@ void Container::drawWidget(QPainter &p){
         pen.setWidth(10);
         p.setPen(pen);
         p.drawRect(0, 0, this->width(), this->height());
+        this->Container::raise();
     }
 }
 
@@ -74,32 +74,4 @@ bool Container::hasContainer(Container* c){
         if(oc == c){has=true;}
     }
     return has;
-}
-
-void Container::resize(int w, int h){
-    this->QWidget::resize(w,h);
-    if(this->widget != NULL){
-        this->widget->resize(w,h);
-    }
-}
-
-void Container::setGeometry(int x, int y, int w, int h){
-    this->QWidget::setGeometry(x,y,w,h);
-    if(this->widget != NULL){
-        this->widget->setGeometry(x,y,w,h);
-    }
-}
-
-void Container::move(int x, int y){
-    this->QWidget::move(x,y);
-    if(this->widget != NULL){
-        this->widget->move(x,y);
-    }
-}
-
-void Container::move(QPoint &p){
-    this->QWidget::move(p);
-    if(this->widget != NULL){
-        this->widget->QWidget::move(p.x(), p.y());
-    }
 }
