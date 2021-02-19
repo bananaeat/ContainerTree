@@ -11,7 +11,8 @@ private:
     void drawWidget(QPainter &p);
 public:
     explicit Container(QWidget *parent = nullptr);
-    void paintEvent(QPaintEvent *event);
+    bool containing;
+    virtual void paintEvent(QPaintEvent *event);
     QList<Container*> containerList;
     void choose();
     void unChoose();
@@ -20,10 +21,6 @@ public:
     bool hasContainer(Container* c);
     QPoint  savePos;
     bool noChildAtClicked(QPoint &clicked);
-    void setGeometry(int x, int y, int w, int h);
-    void resize(int w, int h);
-    void move(int x, int y);
-    void move(QPoint &p);
 
 signals:
 

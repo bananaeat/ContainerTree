@@ -6,6 +6,7 @@
 Container::Container(QWidget *parent) : QWidget(parent)
 {
     chosen = false;
+    containing = true;
 }
 
 void Container::drawWidget(QPainter &p){
@@ -18,11 +19,11 @@ void Container::drawWidget(QPainter &p){
         pen.setWidth(10);
         p.setPen(pen);
         p.drawRect(0, 0, this->width(), this->height());
-        this->Container::raise();
     }
 }
 
 void Container::paintEvent(QPaintEvent *event){
+    QWidget::paintEvent(event);
     QPainter painter(this);
     this->drawWidget(painter);
 }

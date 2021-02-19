@@ -9,6 +9,7 @@ SimpleSpeedMeter::SimpleSpeedMeter(QWidget *parent) : Container(parent)
     theta = 135;
     QLineEdit le(this);
     size = 200;
+    this->Container::containing = false;
 }
 
 SimpleSpeedMeter::~SimpleSpeedMeter(){
@@ -71,9 +72,9 @@ void SimpleSpeedMeter::drawGauge(QPainter &p){
 }
 
 void SimpleSpeedMeter::paintEvent(QPaintEvent *event){
-    this->Container::paintEvent(event);
     QPainter painter(this);
     this->drawGauge(painter);
+    this->Container::paintEvent(event);
 }
 
 void SimpleSpeedMeter::setAngle(double a){

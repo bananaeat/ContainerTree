@@ -2,6 +2,7 @@
 #include "ui_widget.h"
 #include "mytabwidget.h"
 #include "simplespeedmeter.h"
+#include "mylineedit.h"
 #include <QDebug>
 #include <QMouseEvent>
 #include <QPainter>
@@ -26,8 +27,12 @@ Widget::Widget(QWidget *parent)
 
     SimpleSpeedMeter *ssm = new SimpleSpeedMeter(this);
     SimpleSpeedMeter *ssm2 = new SimpleSpeedMeter(this);
-    this->addContainer(150,200,250,250,ssm);
-    this->addContainer(350,200,250,250,ssm2);
+    MyLineEdit *mle = new MyLineEdit(this);
+    Container *c = new Container(this);
+    this->addContainer(150,200,250,275,ssm);
+    this->addContainer(350,200,200,220,ssm2);
+    this->addContainer(200,200,100,100,mle);
+    this->addContainer(100,200,300,300,c);
 }
 
 Widget::~Widget()
@@ -36,21 +41,20 @@ Widget::~Widget()
 }
 
 void Widget::addContainer(int x, int y, int w, int h, Container *c){
-    c->QWidget::resize(w,h);
-    c->QWidget::move(x,y);
+    c->resize(w,h);
+    c->move(x,y);
     c->setMouseTracking(true);
     for(Container *oc : rootList){
-        if(oc->frameGeometry().contains(c->frameGeometry().topLeft()) && oc->frameGeometry().contains(c->frameGeometry().bottomRight())){
+        if(oc->frameGeometry().contains(c->frameGeometry().topLeft()) && oc->frameGeometry().contains(c->frameGeometry().bottomRight()) && oc->containing==true){
             oc->addContainer(c);
         }
-        if(c->frameGeometry().contains(oc->frameGeometry().topLeft()) && c->frameGeometry().contains(oc->frameGeometry().bottomRight())){
+        if(c->frameGeometry().contains(oc->frameGeometry().topLeft()) && c->frameGeometry().contains(oc->frameGeometry().bottomRight()) && c->containing==true){
             c->addContainer(oc);
         }
     }
 
     c->savePos = QPoint(0, 0);
     rootList.append(c);
-    qDebug() << "Length:" << rootList.length();
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event)
@@ -66,23 +70,23 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             setCursor(Qt::ArrowCursor);
             newPos = event->pos();
             QPoint A = chosen->pos() + newPos - chosen->savePos;
-            chosen->QWidget::move(A);
+            chosen->move(A);
             for(Container *childc : chosen->containerList){
                 QPoint B = childc->pos() + newPos - childc->savePos;
-                childc->QWidget::move(B);
+                childc->move(B);
                 childc->savePos = newPos;
             }
             chosen->savePos = newPos;
-            update();
+//            update();
 
             for(Container *oc : rootList){
                 if(oc != chosen){
-                    if(oc->frameGeometry().contains(chosen->frameGeometry().topLeft()) && oc->frameGeometry().contains(chosen->frameGeometry().bottomRight())){
+                    if(oc->frameGeometry().contains(chosen->frameGeometry().topLeft()) && oc->frameGeometry().contains(chosen->frameGeometry().bottomRight()) && oc->containing == true){
                         oc->addContainer(chosen);
                     } else {
                         oc->removeContainer(chosen);
                     }
-                    if(chosen->frameGeometry().contains(oc->frameGeometry().topLeft()) && chosen->frameGeometry().contains(oc->frameGeometry().bottomRight()) && !chosen->hasContainer(oc)){
+                    if(chosen->frameGeometry().contains(oc->frameGeometry().topLeft()) && chosen->frameGeometry().contains(oc->frameGeometry().bottomRight()) && !chosen->hasContainer(oc) && chosen->containing==true){
                         chosen->addContainer(oc);
                         oc->savePos = chosen->savePos;
                     }
@@ -100,7 +104,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nH = chosen->geometry().height();
             if(nW >10)
             {
-                chosen->QWidget::setGeometry(nX,nY,nW,nH);
+                chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -114,7 +118,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nH = chosen->geometry().height();
             if(nW >10)
             {
-                chosen->QWidget::setGeometry(nX,nY,nW,nH);
+                chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -129,7 +133,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nW = chosen->geometry().width();
             if(nH >10)
             {
-                chosen->QWidget::setGeometry(nX,nY,nW,nH);
+                chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -144,7 +148,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             int nW = chosen->geometry().width();
             if(nH > 10)
             {
-                chosen->QWidget::setGeometry(nX,nY,nW,nH);
+                chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
         }
@@ -240,7 +244,8 @@ void Widget::mousePressEvent(QMouseEvent *event)
     if(event->button() == Qt::LeftButton)
     {
         QPoint aPt = event->pos();
-        for(Container* c:rootList){
+        for(int i = 0; i < rootList.size(); i++){
+            Container *c = rootList.at(i);
             QRect  aRect = c->frameGeometry();
             aRect.adjust(-5,-5,5,5);
             if(aRect.contains(aPt))
@@ -250,26 +255,39 @@ void Widget::mousePressEvent(QMouseEvent *event)
                     childc->savePos = event->pos();
                 }
                 bPressed = true;
-            }
-            if(c->noChildAtClicked(aPt) && aRect.contains(aPt)){
-                qDebug()<<"toggled";
-                qDebug()<<(chosen!=NULL);
-                if(chosen!=NULL){
-                    qDebug()<<"unchoose";
-                    chosen->unChoose();
+                bool isChosen = true;
+                for(Container *oc : rootList){
+                    if(oc->frameGeometry().contains(aPt) && c->frameGeometry().contains(oc->frameGeometry().topLeft()) && c->frameGeometry().contains(oc->frameGeometry().bottomRight()) && c!=oc){
+                        isChosen = false;
+                    }
                 }
-                qDebug() << "choose";
-                c->choose();
-                chosen = c;
-                c->raise();
-                qDebug() << "return";
-                return;
+                if(isChosen){
+                    if(chosen!=NULL){
+                        chosen->unChoose();
+                    }
+                    c->choose();
+                    chosen = c;
+                    c->raise();
+                    qDebug() << "i : " << i;
+                    rootList.removeAt(i);
+                    rootList.insert(0, c);
+                    i--;
+                    int offsetJ = 0;
+                    for(int j = rootList.size()-1; j >= 0; j--){
+                        Container *oc = rootList.at(j+offsetJ);
+                        if(c->frameGeometry().contains(oc->frameGeometry().topLeft()) && c->frameGeometry().contains(oc->frameGeometry().bottomRight()) && c!=oc){
+                            oc->raise();
+                            rootList.removeAt(j+offsetJ);
+                            rootList.insert(0, oc);
+                            offsetJ++;
+                        }
+                    }
+                    return;
+                }
             }
         }
         chosen->unChoose();
         chosen = fakeRoot;
-    } else if (event -> button() == Qt::RightButton){
-
     }
 }
 
@@ -281,33 +299,53 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
 }
 
 void Widget::contextMenuEvent( QContextMenuEvent * e ){
-    QAction *pAddAction = new QAction("Add Simple Speed Meter",this);
-    connect(pAddAction, &QAction::triggered ,[=](){
+    QAction *pAddSpeedMeterAction = new QAction("Add Simple Speed Meter",this);
+    QAction *pAddLineEditAction = new QAction("Add LineEdit", this);
+    QAction *pAddContainerAction = new QAction("Add Container", this);
+
+    connect(pAddSpeedMeterAction, &QAction::triggered ,[=](){
         SimpleSpeedMeter *s = new SimpleSpeedMeter(this);
-        this->addContainer(mouseX, mouseY, 250, 275, s);
+        this->addContainer(mouseX, mouseY, 100, 110, s);
         s->show();
     });
 
+    connect(pAddLineEditAction, &QAction::triggered ,[=](){
+        MyLineEdit *s = new MyLineEdit(this);
+        this->addContainer(mouseX, mouseY, 100, 100, s);
+        s->show();
+    });
+
+    connect(pAddContainerAction, &QAction::triggered ,[=](){
+        Container *s = new Container(this);
+        this->addContainer(mouseX, mouseY, 100, 100, s);
+        s->show();
+    });
+
+
+
     QMenu *pContextMenu = new QMenu(this);
-    pContextMenu->addAction(pAddAction);
+
+    for(int i = 0; i < rootList.size(); i++){
+        Container *c = rootList.at(i);
+        if(c->frameGeometry().contains(e->pos())){
+            QAction *pDeleteAction = new QAction("Delete",this);
+            connect(pDeleteAction, &QAction::triggered ,[=](){
+                c->setParent(NULL);
+                delete c;
+                rootList.removeAt(i);
+            });
+            pContextMenu->addAction(pDeleteAction);
+            break;
+        }
+    }
+
+    pContextMenu->addAction(pAddSpeedMeterAction);
+    pContextMenu->addAction(pAddLineEditAction);
+    pContextMenu->addAction(pAddContainerAction);
 
     pContextMenu->exec( e->globalPos() );
 
     delete pContextMenu;
     pContextMenu = NULL;
 }
-
-//void Widget::paintEvent(QPaintEvent *event)
-//{
-//   QWidget::paintEvent(event);
-
-//   QRect  aRect = c1->frameGeometry();
-
-//   aRect.adjust(-5,-5,5,5);
-//   QPainter painter(this);
-
-//   painter.setPen(QPen(Qt::red,2,Qt::DotLine));
-//   painter.setBrush(Qt::NoBrush);
-//   painter.drawRect(aRect);
-//}
 
