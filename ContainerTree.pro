@@ -11,12 +11,14 @@ CONFIG += c++11
 SOURCES += \
     container.cpp \
     main.cpp \
+    mainwindow.cpp \
     mylineedit.cpp \
     widget.cpp \
     simplespeedmeter.cpp
 
 HEADERS += \
     container.h \
+    mainwindow.h \
     mylineedit.h \
     widget.h \
     simplespeedmeter.h

@@ -11,5 +11,8 @@ MyLineEdit::MyLineEdit(QWidget *parent) : Container(parent)
 }
 
 void MyLineEdit::resizeEvent(QResizeEvent *event){
-    le->resize(event->size());
+    int w = event->size().width() - 4;
+    int h = event->size().height() - 4;
+    le->move(2,2);
+    le->resize(w,h);
 }

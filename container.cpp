@@ -57,12 +57,13 @@ void Container::addContainer(Container* c){
 }
 
 void Container::removeContainer(Container* c){
+    int offsetI = 0;
     for(int i = 0; i < containerList.size(); i++){
-        Container *oc = containerList.value(i);
+        Container *oc = containerList.value(i-offsetI);
         oc->removeContainer(c);
         if(oc == c){
-            containerList.removeAt(i);
-            i--;
+            containerList.removeAt(i-offsetI);
+            offsetI++;
         }
     }
 }

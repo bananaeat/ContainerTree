@@ -2,11 +2,8 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <QMenu>
 #include "container.h"
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class Widget; }
-QT_END_NAMESPACE
 
 #define DRAG_TO_LEFT   1
 #define DRAG_TO_RIGHT  2
@@ -24,10 +21,12 @@ private:
     QWidget *pEdit;
     int     nDrag;
     Container* c1;
+    void initializeContextMenu();
+    QMenu* pContextMenu;
+    QAction *pDeleteAction;
 public:
     int mouseX; int mouseY;
     Widget(QWidget *parent = nullptr);
-    ~Widget();
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
@@ -35,8 +34,6 @@ public:
     void mouseClickEvent(QMouseEvent *event);
     void addContainer(int x, int y, int w, int h, Container *c);
     void contextMenuEvent( QContextMenuEvent * e );
-
-private:
-    Ui::Widget *ui;
+    void deleteWidget(Container *c);
 };
 #endif // WIDGET_H

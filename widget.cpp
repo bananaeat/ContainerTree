@@ -12,11 +12,9 @@
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
-    , ui(new Ui::Widget)
 {
     mouseX = 0;
     mouseY = 0;
-    ui->setupUi(this);
     this->resize(500, 500);
     this->setMouseTracking(true);
 
@@ -33,11 +31,7 @@ Widget::Widget(QWidget *parent)
     this->addContainer(350,200,200,220,ssm2);
     this->addContainer(200,200,100,100,mle);
     this->addContainer(100,200,300,300,c);
-}
-
-Widget::~Widget()
-{
-    delete ui;
+    initializeContextMenu();
 }
 
 void Widget::addContainer(int x, int y, int w, int h, Container *c){
@@ -77,8 +71,6 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
                 childc->savePos = newPos;
             }
             chosen->savePos = newPos;
-//            update();
-
             for(Container *oc : rootList){
                 if(oc != chosen){
                     if(oc->frameGeometry().contains(chosen->frameGeometry().topLeft()) && oc->frameGeometry().contains(chosen->frameGeometry().bottomRight()) && oc->containing == true){
@@ -298,10 +290,11 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     setCursor(Qt::ArrowCursor);
 }
 
-void Widget::contextMenuEvent( QContextMenuEvent * e ){
+void Widget::initializeContextMenu(){
     QAction *pAddSpeedMeterAction = new QAction("Add Simple Speed Meter",this);
     QAction *pAddLineEditAction = new QAction("Add LineEdit", this);
     QAction *pAddContainerAction = new QAction("Add Container", this);
+    pDeleteAction = new QAction("Delete", this);
 
     connect(pAddSpeedMeterAction, &QAction::triggered ,[=](){
         SimpleSpeedMeter *s = new SimpleSpeedMeter(this);
@@ -321,31 +314,46 @@ void Widget::contextMenuEvent( QContextMenuEvent * e ){
         s->show();
     });
 
-
-
-    QMenu *pContextMenu = new QMenu(this);
-
-    for(int i = 0; i < rootList.size(); i++){
-        Container *c = rootList.at(i);
-        if(c->frameGeometry().contains(e->pos())){
-            QAction *pDeleteAction = new QAction("Delete",this);
-            connect(pDeleteAction, &QAction::triggered ,[=](){
-                c->setParent(NULL);
-                delete c;
-                rootList.removeAt(i);
-            });
-            pContextMenu->addAction(pDeleteAction);
-            break;
-        }
-    }
+    pContextMenu = new QMenu(this);
 
     pContextMenu->addAction(pAddSpeedMeterAction);
     pContextMenu->addAction(pAddLineEditAction);
     pContextMenu->addAction(pAddContainerAction);
+    pContextMenu->addSeparator();
+    pContextMenu->addAction(pDeleteAction);
+}
 
+void Widget::contextMenuEvent( QContextMenuEvent * e ){
+    bool deleted = false;
+    for(int i = 0; i < rootList.size(); i++){
+        Container *c = rootList.at(i);
+        if(c->frameGeometry().contains(e->pos())){
+            disconnect(pDeleteAction, &QAction::triggered, nullptr, nullptr);
+            connect(pDeleteAction, &QAction::triggered ,[=](){
+                rootList.removeAt(i);
+                if(chosen == c){
+                    chosen = fakeRoot;
+                }
+                deleteWidget(c);
+            });
+            deleted = true;
+            pDeleteAction->setEnabled(true);
+            break;
+        }
+    }
+    if(!deleted){
+        pDeleteAction->setEnabled(false);
+    }
     pContextMenu->exec( e->globalPos() );
+}
 
-    delete pContextMenu;
-    pContextMenu = NULL;
+void Widget::deleteWidget(Container *c){
+    for(Container *oc : rootList){
+        if(oc != c){
+            oc->removeContainer(c);
+        }
+    }
+    c->setParent(NULL);
+    delete c;
 }
 
