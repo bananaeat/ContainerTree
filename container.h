@@ -21,6 +21,7 @@ public:
     bool hasContainer(Container* c);
     QPoint  savePos;
     bool noChildAtClicked(QPoint &clicked);
+    QString containerType;
 
 signals:
 

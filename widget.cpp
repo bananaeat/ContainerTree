@@ -357,3 +357,43 @@ void Widget::deleteWidget(Container *c){
     delete c;
 }
 
+QString Widget::saveWidgets(){
+    QString json = "{\"widgets\":[";
+    for(int i = 0; i < rootList.size(); i++){
+        Container *c = rootList.at(i);
+        QString x = QString::number(c->x());
+        QString y = QString::number(c->y());
+        QString w = QString::number(c->width());
+        QString h = QString::number(c->height());
+
+
+        QString children = "";
+        if(c->containing){
+            children += "[";
+            bool hasChildren = false;
+            for(int j = 0; j < rootList.size(); j++){
+                Container *oc = rootList.at(j);
+                if(c->containerList.contains(oc)){
+                    children += QString::number(j) + ",";
+                    hasChildren = true;
+                }
+            }
+            if(hasChildren){
+                children.remove(children.size()-1, 1);
+            }
+            children += "]";
+        }
+
+        QString type = c->containerType;
+        json += "{\"x\":" + x + ",\"y\":" + y + ",\"w\":" + w + ",\"h\":" + h + ",\"type\":\"" + type +"\"";
+        if(c->containing){
+            json += ",\"children\":" + children;
+        }
+        json+="},\n";
+    }
+    json.remove(json.size()-2, 2);
+    json+="]}";
+
+    return json;
+}
+

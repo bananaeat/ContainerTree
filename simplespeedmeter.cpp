@@ -10,6 +10,7 @@ SimpleSpeedMeter::SimpleSpeedMeter(QWidget *parent) : Container(parent)
     QLineEdit le(this);
     size = 200;
     this->Container::containing = false;
+    this->Container::containerType = "ssm";
 }
 
 SimpleSpeedMeter::~SimpleSpeedMeter(){

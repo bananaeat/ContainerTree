@@ -7,6 +7,7 @@ Container::Container(QWidget *parent) : QWidget(parent)
 {
     chosen = false;
     containing = true;
+    this->containerType = "c";
 }
 
 void Container::drawWidget(QPainter &p){

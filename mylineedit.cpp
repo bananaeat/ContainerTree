@@ -8,6 +8,7 @@ MyLineEdit::MyLineEdit(QWidget *parent) : Container(parent)
     le = new QLineEdit(this);
     le->setEnabled(false);
     this->Container::containing=false;
+    this->Container::containerType = "mle";
 }
 
 void MyLineEdit::resizeEvent(QResizeEvent *event){

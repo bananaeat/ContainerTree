@@ -35,5 +35,6 @@ public:
     void addContainer(int x, int y, int w, int h, Container *c);
     void contextMenuEvent( QContextMenuEvent * e );
     void deleteWidget(Container *c);
+    QString saveWidgets();
 };
 #endif // WIDGET_H
