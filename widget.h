@@ -30,11 +30,11 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-//    void paintEvent(QPaintEvent *event);
     void mouseClickEvent(QMouseEvent *event);
     void addContainer(int x, int y, int w, int h, Container *c);
     void contextMenuEvent( QContextMenuEvent * e );
     void deleteWidget(Container *c);
     QString saveWidgets();
+    void loadWidgets(QString json);
 };
 #endif // WIDGET_H

@@ -18,6 +18,7 @@ public:
     int widgetHeight = 600;
     int widgetWidth = 800;
     void paintEvent(QPaintEvent *event);
+    void initializeMenuBar(Widget* w);
 
 signals:
 

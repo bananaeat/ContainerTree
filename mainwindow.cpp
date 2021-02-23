@@ -18,6 +18,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     w->move(100,100);
     w->show();
 
+    initializeMenuBar(w);
+}
+
+void MainWindow::initializeMenuBar(Widget* w){
     QMenuBar* menuBar = new QMenuBar(this);
     this->setMenuBar(menuBar);
 
@@ -25,7 +29,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     menuBar->addMenu(menu);
 
     QAction* qSaveAction = new QAction("Save", this);
+    QAction* qLoadAction = new QAction("Load", this);
     menu->addAction(qSaveAction);
+    menu->addAction(qLoadAction);
 
     connect(qSaveAction, &QAction::triggered, [=](){
         QString fileName = QFileDialog::getSaveFileName(this,tr("Save Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
@@ -41,9 +47,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             }
 
             file.write(w->saveWidgets().toUtf8());
+            file.close();
         }
     });
 
+    connect(qLoadAction, &QAction::triggered, [=](){
+        QString fileName = QFileDialog::getOpenFileName(this,tr("Save Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
+        qDebug() << fileName;
+        if (fileName.isEmpty()){
+            return;
+        } else {
+            QFile file(fileName);
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::information(this, tr("Unable to open file"),
+                    file.errorString());
+                return;
+            }
+
+            QString loadedw = file.readAll();
+            file.close();
+            qDebug() << loadedw;
+            w->loadWidgets(loadedw);
+        }
+    });
 }
 
 void MainWindow::drawWidgetBorder(QPainter &p){

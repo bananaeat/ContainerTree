@@ -9,6 +9,9 @@
 #include <QTabWidget>
 #include <QTextEdit>
 #include <QMenu>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QVariantMap>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -49,6 +52,11 @@ void Widget::addContainer(int x, int y, int w, int h, Container *c){
 
     c->savePos = QPoint(0, 0);
     rootList.append(c);
+
+    for(int j = rootList.size()-1; j >= 0; j--){
+        Container *oc = rootList.at(j);
+        oc->raise();
+    }
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event)
@@ -331,9 +339,6 @@ void Widget::contextMenuEvent( QContextMenuEvent * e ){
             disconnect(pDeleteAction, &QAction::triggered, nullptr, nullptr);
             connect(pDeleteAction, &QAction::triggered ,[=](){
                 rootList.removeAt(i);
-                if(chosen == c){
-                    chosen = fakeRoot;
-                }
                 deleteWidget(c);
             });
             deleted = true;
@@ -352,6 +357,9 @@ void Widget::deleteWidget(Container *c){
         if(oc != c){
             oc->removeContainer(c);
         }
+    }
+    if(c == chosen){
+        chosen = fakeRoot;
     }
     c->setParent(NULL);
     delete c;
@@ -395,5 +403,58 @@ QString Widget::saveWidgets(){
     json+="]}";
 
     return json;
+}
+
+void Widget::loadWidgets(QString json){
+    //Clear the widgets for now, will add other tabs in the future to save the widgets
+    while(rootList.size()>0){
+        Container *toDelete = rootList.at(0);
+        rootList.removeAt(0);
+        deleteWidget(toDelete);
+    }
+    qDebug() << rootList.size();
+
+    QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    QJsonObject jObject = doc.object();
+
+    //convert the json object to variantmap
+    QVariantMap mainMap = jObject.toVariantMap();
+
+    //convert the json object to variantmap
+    QVariantList widgetList = mainMap["widgets"].toList();
+    for(int i = 0; i < widgetList.size(); i++){
+        QVariantMap wid = widgetList[i].toMap();
+        int x = wid["x"].toInt();
+        int y = wid["y"].toInt();
+        int w = wid["w"].toInt();
+        int h = wid["h"].toInt();
+        QString type = wid["type"].toString();
+
+        //Need to be more extendable: need improvement
+        Container *c;
+        if(type == "c"){
+            c = new Container(this);
+        }
+        if(type == "mle"){
+            c = new MyLineEdit(this);
+        }
+        if(type == "ssm"){
+            c = new SimpleSpeedMeter(this);
+        }
+
+        qDebug() << "Widget: x=" + wid["x"].toString() + " y=" + wid["y"].toString() + " type=" + wid["type"].toString() + " children=" + wid["children"].toString();
+        this->addContainer(x,y,w,h,c);
+        c->show();
+    }
+
+    for(int i = 0; i < widgetList.size(); i++){
+        QVariantMap wid = widgetList[i].toMap();
+        QVariantList childrenList = wid["children"].toList();
+        for(int j = 0; j < childrenList.size(); j++){
+            int child = childrenList[j].toInt();
+            qDebug() << child;
+            rootList.at(i)->containerList.append(rootList.at(child));
+        }
+    }
 }
 
