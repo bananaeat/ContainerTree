@@ -1,4 +1,6 @@
 #include "mainwindow.h"
+#include "simplespeedmeter.h"
+#include "mylineedit.h"
 #include "ui_widget.h"
 #include "widget.h"
 #include <QPainter>
@@ -7,21 +9,97 @@
 #include <QMenuBar>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QMouseEvent>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     this->resize(1000,800);
 
-    Widget* w = new Widget(this);
+    w = new Widget(this);
     w->setMouseTracking(true);
     w->resize(800,600);
     w->move(100,100);
     w->show();
 
-    initializeMenuBar(w);
+    contextualizeMenuBar();
+    initializeToolBar();
 }
 
-void MainWindow::initializeMenuBar(Widget* w){
+void MainWindow::initializeToolBar(){
+    QToolBar* toolbar = new QToolBar(this);
+    this->addToolBar(toolbar);
+    this->setContextMenuPolicy(Qt::NoContextMenu);
+
+    QAction* qAddSimpleSpeedMeter = new QAction(QIcon(":/toolBar/images/speed.png"), "Add Simple Speed Meter", this);
+    QAction* qAddmyLineEdit = new QAction(QIcon(":/toolBar/images/text-box.png"), "Add Line Edit", this);
+    QAction* qAddContainer = new QAction(QIcon(":/toolBar/images/box.png"), "Add Container", this);
+
+    toolbar->addAction(qAddSimpleSpeedMeter);
+    toolbar->addAction(qAddmyLineEdit);
+    toolbar->addAction(qAddContainer);
+
+    connect(qAddSimpleSpeedMeter, &QAction::triggered, [=](){
+        QPixmap cursorSpeed(":/toolBar/images/speedAdd.png");
+        cursorSpeed = cursorSpeed.scaledToHeight(64, Qt::SmoothTransformation);
+        setCursor(QCursor(cursorSpeed));
+        w->cursor = QCursor(cursorSpeed);
+        addingType = "ssm";
+    });
+
+    connect(qAddmyLineEdit, &QAction::triggered, [=](){
+        QPixmap cursorEdit(":/toolBar/images/text-boxAdd.png");
+        cursorEdit = cursorEdit.scaledToHeight(64, Qt::SmoothTransformation);
+        setCursor(QCursor(cursorEdit));
+        w->cursor = QCursor(cursorEdit);
+        addingType = "mle";
+    });
+
+    connect(qAddContainer, &QAction::triggered, [=](){
+        QPixmap cursorContainer(":/toolBar/images/boxAdd.png");
+        cursorContainer = cursorContainer.scaledToHeight(64, Qt::SmoothTransformation);
+        setCursor(QCursor(cursorContainer));
+        w->cursor = QCursor(cursorContainer);
+        addingType = "c";
+    });
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event){
+    if(event->button() == Qt::RightButton){
+        this->setCursor(Qt::ArrowCursor);
+        w->cursor = Qt::ArrowCursor;
+        this->addingType = "";
+    }
+    if(event->button() == Qt::LeftButton){
+        Container* wid = NULL;
+        int height = 0;
+        int width = 0;
+
+        if(addingType == "ssm"){
+            wid = new SimpleSpeedMeter(w);
+            height = 220; width = 200;
+        }
+
+        if(addingType == "mle"){
+            wid = new MyLineEdit(w);
+            height = 40; width = 200;
+        }
+
+        if(addingType == "c"){
+            wid = new Container(w);
+            height = 200; width = 200;
+        }
+
+        if(addingType == ""){
+            return;
+        }
+
+        QPoint pos = event->pos() - w->pos();
+        w->addContainer(pos.x(), pos.y(), width, height, wid);
+        wid->show();
+    }
+}
+
+void MainWindow::contextualizeMenuBar(){
     QMenuBar* menuBar = new QMenuBar(this);
     this->setMenuBar(menuBar);
 

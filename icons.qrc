@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/toolBar">
+        <file>images/speed.png</file>
+        <file>images/speedAdd.png</file>
+        <file>images/text-box.png</file>
+        <file>images/text-boxAdd.png</file>
+        <file>images/box.png</file>
+        <file>images/boxAdd.png</file>
+    </qresource>
+</RCC>

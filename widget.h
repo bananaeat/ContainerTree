@@ -36,5 +36,6 @@ public:
     void deleteWidget(Container *c);
     QString saveWidgets();
     void loadWidgets(QString json);
+    QCursor cursor;
 };
 #endif // WIDGET_H

@@ -20,6 +20,7 @@ Widget::Widget(QWidget *parent)
     mouseY = 0;
     this->resize(500, 500);
     this->setMouseTracking(true);
+    cursor = Qt::ArrowCursor;
 
     fakeRoot = new Container();
     chosen = fakeRoot;
@@ -51,7 +52,7 @@ void Widget::addContainer(int x, int y, int w, int h, Container *c){
     }
 
     c->savePos = QPoint(0, 0);
-    rootList.append(c);
+    rootList.insert(0, c);
 
     for(int j = rootList.size()-1; j >= 0; j--){
         Container *oc = rootList.at(j);
@@ -236,7 +237,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    setCursor(Qt::ArrowCursor);
+    setCursor(cursor);
 }
 
 void Widget::mousePressEvent(QMouseEvent *event)
@@ -289,6 +290,16 @@ void Widget::mousePressEvent(QMouseEvent *event)
         chosen->unChoose();
         chosen = fakeRoot;
     }
+
+    if(event->button() == Qt::RightButton){
+        if(this->cursor != Qt::ArrowCursor){
+            this->cursor = Qt::ArrowCursor;
+            this->setContextMenuPolicy(Qt::NoContextMenu);
+        } else {
+            this->setContextMenuPolicy(Qt::DefaultContextMenu);
+        }
+    }
+    QWidget::mousePressEvent(event);
 }
 
 void Widget::mouseReleaseEvent(QMouseEvent *event)
