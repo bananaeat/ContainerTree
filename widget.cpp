@@ -27,14 +27,6 @@ Widget::Widget(QWidget *parent)
     bPressed = false;
     nDrag = 0;
 
-    SimpleSpeedMeter *ssm = new SimpleSpeedMeter(this);
-    SimpleSpeedMeter *ssm2 = new SimpleSpeedMeter(this);
-    MyLineEdit *mle = new MyLineEdit(this);
-    Container *c = new Container(this);
-    this->addContainer(150,200,250,275,ssm);
-    this->addContainer(350,200,200,220,ssm2);
-    this->addContainer(200,200,100,100,mle);
-    this->addContainer(100,200,300,300,c);
     initializeContextMenu();
 }
 
@@ -242,7 +234,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
 
 void Widget::mousePressEvent(QMouseEvent *event)
 {
-    if(event->button() == Qt::LeftButton)
+    if(event->button() == Qt::LeftButton && cursor == Qt::ArrowCursor)
     {
         QPoint aPt = event->pos();
         for(int i = 0; i < rootList.size(); i++){
@@ -417,14 +409,6 @@ QString Widget::saveWidgets(){
 }
 
 void Widget::loadWidgets(QString json){
-    //Clear the widgets for now, will add other tabs in the future to save the widgets
-    while(rootList.size()>0){
-        Container *toDelete = rootList.at(0);
-        rootList.removeAt(0);
-        deleteWidget(toDelete);
-    }
-    qDebug() << rootList.size();
-
     QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
     QJsonObject jObject = doc.object();
 
@@ -459,12 +443,14 @@ void Widget::loadWidgets(QString json){
     }
 
     for(int i = 0; i < widgetList.size(); i++){
+        int realI = rootList.size() - i - 1;
         QVariantMap wid = widgetList[i].toMap();
         QVariantList childrenList = wid["children"].toList();
         for(int j = 0; j < childrenList.size(); j++){
             int child = childrenList[j].toInt();
-            qDebug() << child;
-            rootList.at(i)->containerList.append(rootList.at(child));
+            int realChild = rootList.size() - child - 1;
+            qDebug() << realChild;
+            rootList.at(realI)->containerList.append(rootList.at(realChild));
         }
     }
 }

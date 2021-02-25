@@ -10,23 +10,28 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QTabWidget>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     this->resize(1000,800);
 
-    w = new Widget(this);
-    w->setMouseTracking(true);
-    w->resize(800,600);
-    w->move(100,100);
-    w->show();
+    tabWidget = new QTabWidget(this);
+    tabWidget->resize(1000,740);
+    tabWidget->move(0,60);
 
-    contextualizeMenuBar();
+    initializeMenuBar();
     initializeToolBar();
+
+    connect(tabWidget, &QTabWidget::currentChanged, [=](){
+        currentWidget = tabWidget->currentIndex();
+        contextualizeMenuBar();
+        contextualizeToolBar();
+    });
 }
 
 void MainWindow::initializeToolBar(){
-    QToolBar* toolbar = new QToolBar(this);
+    toolbar = new QToolBar(this);
     this->addToolBar(toolbar);
     this->setContextMenuPolicy(Qt::NoContextMenu);
 
@@ -37,6 +42,17 @@ void MainWindow::initializeToolBar(){
     toolbar->addAction(qAddSimpleSpeedMeter);
     toolbar->addAction(qAddmyLineEdit);
     toolbar->addAction(qAddContainer);
+}
+
+void MainWindow::contextualizeToolBar(){
+    QAction* qAddSimpleSpeedMeter = toolbar->actions().at(0);
+    QAction* qAddmyLineEdit = toolbar->actions().at(1);
+    QAction* qAddContainer = toolbar->actions().at(2);
+
+    Widget* w = (Widget*)tabWidget->widget(currentWidget);
+    qAddSimpleSpeedMeter->disconnect();
+    qAddmyLineEdit->disconnect();
+    qAddContainer->disconnect();
 
     connect(qAddSimpleSpeedMeter, &QAction::triggered, [=](){
         QPixmap cursorSpeed(":/toolBar/images/speedAdd.png");
@@ -64,6 +80,9 @@ void MainWindow::initializeToolBar(){
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event){
+    qDebug() << currentWidget;
+    Widget* w = (Widget*)tabWidget->widget(currentWidget);
+
     if(event->button() == Qt::RightButton){
         this->setCursor(Qt::ArrowCursor);
         w->cursor = Qt::ArrowCursor;
@@ -93,23 +112,64 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
             return;
         }
 
-        QPoint pos = event->pos() - w->pos();
+        QPoint pos = event->pos() - tabWidget->pos();
         w->addContainer(pos.x(), pos.y(), width, height, wid);
         wid->show();
     }
 }
 
-void MainWindow::contextualizeMenuBar(){
+void MainWindow::initializeMenuBar(){
     QMenuBar* menuBar = new QMenuBar(this);
     this->setMenuBar(menuBar);
 
-    QMenu* menu = new QMenu("File", this);
+    menu = new QMenu("File", this);
     menuBar->addMenu(menu);
 
-    QAction* qSaveAction = new QAction("Save", this);
-    QAction* qLoadAction = new QAction("Load", this);
+    QAction* qSaveAction = new QAction("Save Current Widget Design...", this);
+    QAction* qOpenAction = new QAction("Open Widget Design From File...", this);
+    QAction* qNewAction = new QAction("New Widget Design...", this);
+
+    menu->addAction(qNewAction);
     menu->addAction(qSaveAction);
-    menu->addAction(qLoadAction);
+    menu->addAction(qOpenAction);
+
+    connect(qNewAction, &QAction::triggered, [=](){
+        Widget* w = new Widget(this);
+        tabWidget->addTab(w, "Untitled Widget Design " + QString::number(currentWidget + 1));
+        tabWidget->setCurrentIndex(currentWidget);
+    });
+
+    connect(qOpenAction, &QAction::triggered, [=](){
+        QString fileName = QFileDialog::getOpenFileName(this,tr("Open Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
+        qDebug() << fileName;
+        if (fileName.isEmpty()){
+            return;
+        } else {
+            QFile file(fileName);
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::information(this, tr("Unable to open file"),
+                    file.errorString());
+                return;
+            }
+
+            QString loadedw = file.readAll();
+            file.close();
+            qDebug() << loadedw;
+            Widget* w = new Widget(this);
+            tabWidget->addTab(w, fileName);
+            currentWidget++;
+            tabWidget->setCurrentIndex(currentWidget);
+            w->loadWidgets(loadedw);
+        }
+    });
+}
+
+void MainWindow::contextualizeMenuBar(){
+    QAction* qSaveAction = menu->actions().at(1);
+
+    Widget* w = (Widget*)tabWidget->widget(currentWidget);
+
+    qSaveAction->disconnect();
 
     connect(qSaveAction, &QAction::triggered, [=](){
         QString fileName = QFileDialog::getSaveFileName(this,tr("Save Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
@@ -126,26 +186,6 @@ void MainWindow::contextualizeMenuBar(){
 
             file.write(w->saveWidgets().toUtf8());
             file.close();
-        }
-    });
-
-    connect(qLoadAction, &QAction::triggered, [=](){
-        QString fileName = QFileDialog::getOpenFileName(this,tr("Save Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
-        qDebug() << fileName;
-        if (fileName.isEmpty()){
-            return;
-        } else {
-            QFile file(fileName);
-            if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::information(this, tr("Unable to open file"),
-                    file.errorString());
-                return;
-            }
-
-            QString loadedw = file.readAll();
-            file.close();
-            qDebug() << loadedw;
-            w->loadWidgets(loadedw);
         }
     });
 }

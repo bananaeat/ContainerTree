@@ -14,14 +14,19 @@ class MainWindow : public QMainWindow
 private:
     void drawWidgetBorder(QPainter &p);
 public:
-    Widget* w;
+    QTabWidget* tabWidget;
+    int currentWidget = -1;
     explicit MainWindow(QWidget *parent = nullptr);
     int widgetHeight = 600;
     int widgetWidth = 800;
     void paintEvent(QPaintEvent *event);
+    void initializeMenuBar();
     void contextualizeMenuBar();
     void initializeToolBar();
+    void contextualizeToolBar();
     void mousePressEvent(QMouseEvent *event);
+    QToolBar* toolbar;
+    QMenu* menu;
     QString addingType;
 
 signals:
