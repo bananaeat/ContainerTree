@@ -1,6 +1,7 @@
 #include "widget.h"
 #include "ui_widget.h"
 #include "mytabwidget.h"
+#include "mainwindow.h"
 #include "simplespeedmeter.h"
 #include "mylineedit.h"
 #include <QDebug>
@@ -28,6 +29,7 @@ Widget::Widget(QWidget *parent)
     nDrag = 0;
 
     initializeContextMenu();
+    saved = false;
 }
 
 void Widget::addContainer(int x, int y, int w, int h, Container *c){
@@ -50,6 +52,8 @@ void Widget::addContainer(int x, int y, int w, int h, Container *c){
         Container *oc = rootList.at(j);
         oc->raise();
     }
+
+    saved = false;
 }
 
 void Widget::mouseMoveEvent(QMouseEvent *event)
@@ -66,6 +70,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             newPos = event->pos();
             QPoint A = chosen->pos() + newPos - chosen->savePos;
             chosen->move(A);
+            saved = false;
             for(Container *childc : chosen->containerList){
                 QPoint B = childc->pos() + newPos - childc->savePos;
                 childc->move(B);
@@ -85,6 +90,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
                     }
                 }
             }
+            QWidget::mouseMoveEvent(event);
             return;
         }
         bool up = false;
@@ -100,6 +106,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
                 chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
+            saved = false;
         }
 
         if(nDrag & DRAG_TO_RIGHT)
@@ -114,6 +121,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
                 chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
+            saved = false;
         }
 
         if(nDrag & DRAG_TO_TOP)
@@ -129,6 +137,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
                 chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
+            saved = false;
         }
 
         if(nDrag & DRAG_TO_BOTTOM)
@@ -144,6 +153,7 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
                 chosen->setGeometry(nX,nY,nW,nH);
                 up = true;
             }
+            saved = false;
         }
 
         if(up)
@@ -151,6 +161,8 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
             chosen->savePos = newPos;
             update();
         }
+
+        QWidget::mouseMoveEvent(event);
     }
 
     nDrag       = 0;
@@ -309,19 +321,19 @@ void Widget::initializeContextMenu(){
 
     connect(pAddSpeedMeterAction, &QAction::triggered ,[=](){
         SimpleSpeedMeter *s = new SimpleSpeedMeter(this);
-        this->addContainer(mouseX, mouseY, 100, 110, s);
+        this->addContainer(mouseX, mouseY, 200, 220, s);
         s->show();
     });
 
     connect(pAddLineEditAction, &QAction::triggered ,[=](){
         MyLineEdit *s = new MyLineEdit(this);
-        this->addContainer(mouseX, mouseY, 100, 100, s);
+        this->addContainer(mouseX, mouseY, 200, 40, s);
         s->show();
     });
 
     connect(pAddContainerAction, &QAction::triggered ,[=](){
         Container *s = new Container(this);
-        this->addContainer(mouseX, mouseY, 100, 100, s);
+        this->addContainer(mouseX, mouseY, 200, 200, s);
         s->show();
     });
 

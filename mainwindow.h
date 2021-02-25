@@ -14,6 +14,7 @@ class MainWindow : public QMainWindow
 private:
     void drawWidgetBorder(QPainter &p);
 public:
+    int untitled = 0;
     QTabWidget* tabWidget;
     int currentWidget = -1;
     explicit MainWindow(QWidget *parent = nullptr);
@@ -25,6 +26,7 @@ public:
     void initializeToolBar();
     void contextualizeToolBar();
     void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
     QToolBar* toolbar;
     QMenu* menu;
     QString addingType;

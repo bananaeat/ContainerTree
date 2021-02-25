@@ -9,6 +9,8 @@ MyLineEdit::MyLineEdit(QWidget *parent) : Container(parent)
     le->setEnabled(false);
     this->Container::containing=false;
     this->Container::containerType = "mle";
+    this->le->setText("Text...");
+    this->le->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 }
 
 void MyLineEdit::resizeEvent(QResizeEvent *event){

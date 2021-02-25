@@ -37,5 +37,8 @@ public:
     QString saveWidgets();
     void loadWidgets(QString json);
     QCursor cursor;
+    QString name;
+    bool saved;
+    bool saveAsed = false;
 };
 #endif // WIDGET_H

@@ -15,6 +15,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     this->resize(1000,800);
+    this->setMouseTracking(true);
 
     tabWidget = new QTabWidget(this);
     tabWidget->resize(1000,740);
@@ -80,7 +81,9 @@ void MainWindow::contextualizeToolBar(){
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event){
-    qDebug() << currentWidget;
+    if(tabWidget->count()==0){
+        return;
+    }
     Widget* w = (Widget*)tabWidget->widget(currentWidget);
 
     if(event->button() == Qt::RightButton){
@@ -92,6 +95,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         Container* wid = NULL;
         int height = 0;
         int width = 0;
+        qDebug() << addingType;
 
         if(addingType == "ssm"){
             wid = new SimpleSpeedMeter(w);
@@ -109,13 +113,25 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         }
 
         if(addingType == ""){
+            tabWidget->setTabText(currentWidget, w->name + (w->saved?"":"*"));
             return;
         }
 
-        QPoint pos = event->pos() - tabWidget->pos();
+        QPoint pos = event->pos() - tabWidget->pos() + QPoint(0, -20);
         w->addContainer(pos.x(), pos.y(), width, height, wid);
+        qDebug() << wid->containerType;
         wid->show();
     }
+
+    tabWidget->setTabText(currentWidget, w->name + (w->saved?"":"*"));
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event){
+    if(tabWidget->count()==0){
+        return;
+    }
+    Widget* w = (Widget*)tabWidget->widget(currentWidget);
+    tabWidget->setTabText(currentWidget, w->name + (w->saved?"":"*"));
 }
 
 void MainWindow::initializeMenuBar(){
@@ -125,23 +141,40 @@ void MainWindow::initializeMenuBar(){
     menu = new QMenu("File", this);
     menuBar->addMenu(menu);
 
+
     QAction* qSaveAction = new QAction("Save Current Widget Design...", this);
+    QAction* qSaveAsAction = new QAction("Save Current Widget Design As...", this);
     QAction* qOpenAction = new QAction("Open Widget Design From File...", this);
     QAction* qNewAction = new QAction("New Widget Design...", this);
 
+    qSaveAction->setShortcut(QKeySequence::Save);
+    qSaveAsAction->setShortcut(QKeySequence::SaveAs);
+    qOpenAction->setShortcut(QKeySequence::Open);
+    qNewAction->setShortcut(QKeySequence::New);
+
     menu->addAction(qNewAction);
     menu->addAction(qSaveAction);
+    menu->addAction(qSaveAsAction);
     menu->addAction(qOpenAction);
 
     connect(qNewAction, &QAction::triggered, [=](){
         Widget* w = new Widget(this);
-        tabWidget->addTab(w, "Untitled Widget Design " + QString::number(currentWidget + 1));
+        w->name = "Untitled Widget Design-" + QString::number(untitled);
+        untitled++;
+        currentWidget++;
+        tabWidget->addTab(w, w->name + (w->saved?"":"*"));
         tabWidget->setCurrentIndex(currentWidget);
     });
 
     connect(qOpenAction, &QAction::triggered, [=](){
         QString fileName = QFileDialog::getOpenFileName(this,tr("Open Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
-        qDebug() << fileName;
+        for(int i = 0; i < tabWidget->count(); i++){
+            QString name = ((Widget*)tabWidget->widget(i))->name;
+            if(name == fileName){
+                tabWidget->setCurrentIndex(i);
+                return;
+            }
+        }
         if (fileName.isEmpty()){
             return;
         } else {
@@ -156,24 +189,33 @@ void MainWindow::initializeMenuBar(){
             file.close();
             qDebug() << loadedw;
             Widget* w = new Widget(this);
-            tabWidget->addTab(w, fileName);
+            w->saved = true;
+            w->name = fileName;
             currentWidget++;
+            tabWidget->addTab(w, fileName);
             tabWidget->setCurrentIndex(currentWidget);
             w->loadWidgets(loadedw);
+            w->saveAsed = true;
         }
     });
 }
 
 void MainWindow::contextualizeMenuBar(){
     QAction* qSaveAction = menu->actions().at(1);
+    QAction* qSaveAsAction = menu->actions().at(2);
 
     Widget* w = (Widget*)tabWidget->widget(currentWidget);
 
+    qSaveAsAction->disconnect();
     qSaveAction->disconnect();
 
     connect(qSaveAction, &QAction::triggered, [=](){
-        QString fileName = QFileDialog::getSaveFileName(this,tr("Save Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
-        qDebug() << fileName;
+        if(!w->saveAsed){
+            qSaveAsAction->trigger();
+            return;
+        }
+
+        QString fileName = w->name;
         if (fileName.isEmpty()){
             return;
         } else {
@@ -186,6 +228,30 @@ void MainWindow::contextualizeMenuBar(){
 
             file.write(w->saveWidgets().toUtf8());
             file.close();
+            w->saved = true;
+            w->name = fileName;
+            tabWidget->setTabText(currentWidget, w->name);
+        }
+    });
+
+    connect(qSaveAsAction, &QAction::triggered, [=](){
+        QString fileName = QFileDialog::getSaveFileName(this,tr("Save Widget Design"), "", tr("JSON (*.json);;All Files (*)"));
+        if (fileName.isEmpty()){
+            return;
+        } else {
+            QFile file(fileName);
+            if (!file.open(QIODevice::WriteOnly)) {
+                QMessageBox::information(this, tr("Unable to open file"),
+                    file.errorString());
+                return;
+            }
+
+            file.write(w->saveWidgets().toUtf8());
+            file.close();
+            w->saved = true;
+            w->name = fileName;
+            tabWidget->setTabText(currentWidget, w->name);
+            w->saveAsed = true;
         }
     });
 }
