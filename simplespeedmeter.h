@@ -15,7 +15,6 @@ public:
     int size;
     void resize(int w, int h);
     void setGeometry(int x, int y, int w, int h);
-
 private:
     double theta;
     void drawGauge(QPainter &p);

@@ -19,7 +19,6 @@ Widget::Widget(QWidget *parent)
 {
     mouseX = 0;
     mouseY = 0;
-    this->resize(500, 500);
     this->setMouseTracking(true);
     cursor = Qt::ArrowCursor;
 
@@ -414,8 +413,11 @@ QString Widget::saveWidgets(){
         }
         json+="},\n";
     }
-    json.remove(json.size()-2, 2);
-    json+="]}";
+    if(rootList.size()!=0){
+        json.remove(json.size()-2, 2);
+    }
+    json+="],";
+    json+="\"width\":" + QString::number(this->width) + ",\"height\":" + QString::number(this->height) +"}";
 
     return json;
 }
@@ -429,6 +431,8 @@ void Widget::loadWidgets(QString json){
 
     //convert the json object to variantmap
     QVariantList widgetList = mainMap["widgets"].toList();
+    this->width = mainMap["width"].toInt();
+    this->height = mainMap["height"].toInt();
     for(int i = 0; i < widgetList.size(); i++){
         QVariantMap wid = widgetList[i].toMap();
         int x = wid["x"].toInt();
@@ -467,3 +471,8 @@ void Widget::loadWidgets(QString json){
     }
 }
 
+void Widget::resize(int w, int h){
+    this->width = w;
+    this->height = h;
+    this->QWidget::resize(w,h);
+}

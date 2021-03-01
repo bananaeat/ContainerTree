@@ -27,6 +27,7 @@ private:
 public:
     int mouseX; int mouseY;
     Widget(QWidget *parent = nullptr);
+    void resize(int w, int h);
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
@@ -40,5 +41,6 @@ public:
     QString name;
     bool saved;
     bool saveAsed = false;
+    int height; int width;
 };
 #endif // WIDGET_H

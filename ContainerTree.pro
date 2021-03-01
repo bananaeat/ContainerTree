@@ -13,6 +13,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mylineedit.cpp \
+    newdesigndialog.cpp \
     widget.cpp \
     simplespeedmeter.cpp
 
@@ -20,6 +21,7 @@ HEADERS += \
     container.h \
     mainwindow.h \
     mylineedit.h \
+    newdesigndialog.h \
     widget.h \
     simplespeedmeter.h
 

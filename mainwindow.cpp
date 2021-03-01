@@ -3,7 +3,7 @@
 #include "mylineedit.h"
 #include "ui_widget.h"
 #include "widget.h"
-#include <QPainter>
+#include "newdesigndialog.h"
 #include <QDebug>
 #include <QToolBar>
 #include <QMenuBar>
@@ -26,6 +26,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     connect(tabWidget, &QTabWidget::currentChanged, [=](){
         currentWidget = tabWidget->currentIndex();
+        Widget* w = (Widget*)tabWidget->widget(currentWidget);
+        tabWidget->resize(w->width, w->height);
+        tabWidget->move((this->width() - w->width)/2, (this->height() - w->height)/2 + 28);
         contextualizeMenuBar();
         contextualizeToolBar();
     });
@@ -86,6 +89,10 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
     }
     Widget* w = (Widget*)tabWidget->widget(currentWidget);
 
+    QString shortenedName = w->name;
+    shortenedName.truncate(12);
+    shortenedName.append("...");
+
     if(event->button() == Qt::RightButton){
         this->setCursor(Qt::ArrowCursor);
         w->cursor = Qt::ArrowCursor;
@@ -113,7 +120,8 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         }
 
         if(addingType == ""){
-            tabWidget->setTabText(currentWidget, w->name + (w->saved?"":"*"));
+
+            tabWidget->setTabText(currentWidget, shortenedName + (w->saved?"":"*"));
             return;
         }
 
@@ -123,7 +131,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         wid->show();
     }
 
-    tabWidget->setTabText(currentWidget, w->name + (w->saved?"":"*"));
+    tabWidget->setTabText(currentWidget, shortenedName + (w->saved?"":"*"));
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event){
@@ -131,7 +139,10 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event){
         return;
     }
     Widget* w = (Widget*)tabWidget->widget(currentWidget);
-    tabWidget->setTabText(currentWidget, w->name + (w->saved?"":"*"));
+    QString shortenedName = w->name;
+    shortenedName.truncate(12);
+    shortenedName.append("...");
+    tabWidget->setTabText(currentWidget, shortenedName + (w->saved?"":"*"));
 }
 
 void MainWindow::initializeMenuBar(){
@@ -159,11 +170,20 @@ void MainWindow::initializeMenuBar(){
 
     connect(qNewAction, &QAction::triggered, [=](){
         Widget* w = new Widget(this);
-        w->name = "Untitled Widget Design-" + QString::number(untitled);
-        untitled++;
-        currentWidget++;
-        tabWidget->addTab(w, w->name + (w->saved?"":"*"));
-        tabWidget->setCurrentIndex(currentWidget);
+        NewDesignDialog* dial = new NewDesignDialog(this, "Untitled-" + QString::number(untitled));
+        if(dial->exec() == QDialog::Accepted){
+            if(dial->getName() == "Untitled-" + QString::number(untitled)){
+                untitled++;
+            }
+            w->name = dial->getName();
+            w->resize(dial->getWidth(), dial->getHeight());
+            currentWidget++;
+            QString shortenedName = w->name;
+            shortenedName.truncate(12);
+            shortenedName.append("...");
+            tabWidget->addTab(w, shortenedName + (w->saved?"":"*"));
+            tabWidget->setCurrentIndex(currentWidget);
+        }
     });
 
     connect(qOpenAction, &QAction::triggered, [=](){
@@ -191,10 +211,15 @@ void MainWindow::initializeMenuBar(){
             Widget* w = new Widget(this);
             w->saved = true;
             w->name = fileName;
-            currentWidget++;
-            tabWidget->addTab(w, fileName);
-            tabWidget->setCurrentIndex(currentWidget);
             w->loadWidgets(loadedw);
+            currentWidget++;
+
+            QString shortenedName = w->name;
+            shortenedName.truncate(12);
+            shortenedName.append("...");
+
+            tabWidget->addTab(w, shortenedName);
+            tabWidget->setCurrentIndex(currentWidget);
             w->saveAsed = true;
         }
     });
@@ -230,7 +255,12 @@ void MainWindow::contextualizeMenuBar(){
             file.close();
             w->saved = true;
             w->name = fileName;
-            tabWidget->setTabText(currentWidget, w->name);
+
+            QString shortenedName = w->name;
+            shortenedName.truncate(12);
+            shortenedName.append("...");
+
+            tabWidget->setTabText(currentWidget, shortenedName);
         }
     });
 
@@ -250,22 +280,13 @@ void MainWindow::contextualizeMenuBar(){
             file.close();
             w->saved = true;
             w->name = fileName;
-            tabWidget->setTabText(currentWidget, w->name);
+
+            QString shortenedName = w->name;
+            shortenedName.truncate(12);
+            shortenedName.append("...");
+
+            tabWidget->setTabText(currentWidget, shortenedName);
             w->saveAsed = true;
         }
     });
-}
-
-void MainWindow::drawWidgetBorder(QPainter &p){
-    QBrush brush(QColor(245,245,245));
-    p.setBrush(brush);
-    QPen pen(QColor(0,0,0));
-    pen.setWidth(0);
-    p.setPen(pen);
-    p.drawRect(100,100,widgetWidth,widgetHeight);
-}
-
-void MainWindow::paintEvent(QPaintEvent *event){
-    QPainter painter(this);
-    drawWidgetBorder(painter);
 }
