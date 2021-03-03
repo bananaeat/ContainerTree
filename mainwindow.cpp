@@ -11,26 +11,92 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QTabWidget>
+#include <QDialogButtonBox>
+#include <QPushButton>
+#include <QGridLayout>
+#include <QPlainTextEdit>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     this->resize(1000,800);
     this->setMouseTracking(true);
 
+    initializeMenuBar();
+    initializeToolBar();
+    initializeTabWidget();
+}
+
+void MainWindow::initializeTabWidget(){
     tabWidget = new QTabWidget(this);
     tabWidget->resize(1000,740);
     tabWidget->move(0,60);
-
-    initializeMenuBar();
-    initializeToolBar();
+    tabWidget->setTabsClosable(true);
 
     connect(tabWidget, &QTabWidget::currentChanged, [=](){
         currentWidget = tabWidget->currentIndex();
-        Widget* w = (Widget*)tabWidget->widget(currentWidget);
-        tabWidget->resize(w->width, w->height);
-        tabWidget->move((this->width() - w->width)/2, (this->height() - w->height)/2 + 28);
-        contextualizeMenuBar();
-        contextualizeToolBar();
+        if(currentWidget >= 0){
+            Widget* w = (Widget*)tabWidget->widget(currentWidget);
+            tabWidget->resize(w->width, w->height);
+            tabWidget->move((this->width() - w->width)/2, (this->height() - w->height)/2 + 28);
+            contextualizeMenuBar();
+            contextualizeToolBar();
+        }
+    });
+
+    connect(tabWidget, &QTabWidget::tabCloseRequested, [=](int i){
+        Widget* w = (Widget*)tabWidget->widget(i);
+        if(!w->saved){
+            QMessageBox* closeDesignBox = new QMessageBox(this);
+            closeDesignBox->addButton(QMessageBox::Save);
+            closeDesignBox->addButton(QMessageBox::Discard);
+            closeDesignBox->addButton(QMessageBox::Cancel);
+            closeDesignBox->button(QMessageBox::Discard)->setText("Do Not Save");
+            closeDesignBox->setModal(true);
+            closeDesignBox->setWindowTitle("Save changes");
+            closeDesignBox->setText(w->name  + " is not save.");
+
+            int ret = closeDesignBox->exec();
+            if(ret == QMessageBox::Save){
+                if(!w->saveAsed){
+                    menu->actions().at(2)->trigger();
+                    tabWidget->removeTab(i);
+                    w->setParent(NULL);
+                    delete w;
+                    return;
+                }
+
+                QString fileName = w->name;
+                if (fileName.isEmpty()){
+                    return;
+                } else {
+                    QFile file(fileName);
+                    if (!file.open(QIODevice::WriteOnly)) {
+                        QMessageBox::information(this, tr("Unable to open file"),
+                            file.errorString());
+                        return;
+                    }
+
+                    file.write(w->saveWidgets().toUtf8());
+                    file.close();
+
+                    tabWidget->removeTab(i);
+                    w->setParent(NULL);
+                    delete w;
+                }
+            }
+            if(ret == QMessageBox::Discard){
+                qDebug() << "remove 1 " + QString::number(i);
+                tabWidget->removeTab(i);
+                qDebug() << "remove 2";
+                w->setParent(NULL);
+                qDebug() << "remove 3";
+                delete w;
+            }
+        } else {
+            tabWidget->removeTab(i);
+            w->setParent(NULL);
+            delete w;
+        }
     });
 }
 

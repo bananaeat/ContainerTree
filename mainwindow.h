@@ -18,6 +18,7 @@ private:
     void contextualizeMenuBar();
     void initializeToolBar();
     void contextualizeToolBar();
+    void initializeTabWidget();
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     QToolBar* toolbar;
